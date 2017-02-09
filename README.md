@@ -15,3 +15,10 @@ This tries to mimic what [polymer-bundler](https://github.com/Polymer/polymer-bu
 For multiple source files:
 
     python main.py --build-dir="C:\build" --doc-root="C:\www" --source-file="C:\www\components\web-component-1.html" --source-file="C:\www\components\web-components-2.html"
+
+## Dependencies
+
+This Python script depends on the following:
+ - Python 3
+ - BeautifulSoup4 (Python module)
+ - html5lib (Python module)
