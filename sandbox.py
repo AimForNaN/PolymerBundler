@@ -39,12 +39,16 @@ class Sandbox(BuildStep):
 							scripts = doc.find_all('script');
 							for script in scripts:
 								script = script.extract();
+								# bs4.contents returns UTF-8-encoded HTML entities,
+								#   but I don't expect that to be an issue for scripts!
 								js.write(' '.join(script.contents));
 
+							# html5lib makes it possible to commit this kind of select:
 							modules = doc.select('body > *, head > style');
 							for module in modules:
-								# if module.name != 'link':
-								html.write('\n'+str(module)+'\n');
+								# formatter="html" converts UTF-8-encoded HTML entities into their
+								#  original ampersand format.
+								html.write('\n'+module.prettify(formatter='html')+'\n');
 					elif node.Type == 'Script':
 						if attrs['src'] in self._DumpCache:
 							continue;
