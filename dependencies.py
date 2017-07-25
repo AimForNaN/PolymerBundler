@@ -4,8 +4,7 @@
 __all__ = ['Dependencies', 'HashableDict'];
 
 from bs4 import BeautifulSoup;
-from collections import defaultdict;
-# from collections import OrderedDict;
+from collections import defaultdict,OrderedDict;
 from pathlib import Path;
 
 from buildstep import *;
@@ -17,6 +16,8 @@ class HashableDict(dict):
 
 class DependencyNode(object):
 	Attributes = None;
+	Children   = None;
+	References = None;
 	Source     = None;
 	Type       = None;
 
@@ -24,6 +25,8 @@ class DependencyNode(object):
 	def __init__(self, src, t, attrs, **kargs):
 		super(DependencyNode, self).__init__()
 		self.Attributes = attrs;
+		self.Children   = dict();
+		self.References = 1;
 		self.Type       = t;
 
 		root = kargs['root'] if 'root' in kargs else None;
@@ -63,6 +66,7 @@ class DependencyNode(object):
 		return False;
 
 class Dependencies(BuildStep):
+	_cache  = dict();
 	Product = [];
 
 	"""Dependency walker."""
@@ -77,21 +81,16 @@ class Dependencies(BuildStep):
 			if child.Source not in self.Product:
 				self._resolve(child);
 
-	def addNode(self, p, c):
-		"""Add child to parent node."""
-		if p not in self.Product:
-			self.Product.append(p);
-
-		if c not in self.Product:
-			self.Product.append(c);
-
-		pidx = self.Product.index(p);
-		cidx = self.Product.index(c);
-
-		# If parent is found below the child, put child below parent!
-		if cidx < pidx:
-			self.Product.pop(cidx);
-			self.Product.append(c);
+	def addNode(self, node, el):
+		ref = 1;
+		if str(el.Source) in self._cache:
+			node.Children[str(el.Source)] = self._cache[str(el.Source)];
+			self._cache[str(el.Source)].References += ref;
+		else:
+			node.Children[str(el.Source)] = el;
+			el.References = ref + node.References;
+			# print(node);
+			self._cache[str(el.Source)] = el;
 
 	def processTree(self, node, **kargs):
 		root = kargs['root'] if 'root' in kargs else None;
@@ -104,7 +103,7 @@ class Dependencies(BuildStep):
 			links = doc.find_all('link');
 			for link in links:
 				link = DependencyNode(link['href'], 'Link', link.attrs, root=root, cwd=cwd);
-				# if link not in self.Product:
+
 				self.addNode(node, link);
 
 				if link.isRemotePath == False:
@@ -115,20 +114,26 @@ class Dependencies(BuildStep):
 			for script in scripts:
 				if script.has_attr('src'):
 					script = DependencyNode(script['src'], 'Script', script.attrs, root=root, cwd=cwd);
-					# if script not in self.Product:
+
 					self.addNode(node, script);
 
 					if script.isRemotePath == False:
 						self.processTree(script, root=root, cwd=script.Source.parent.resolve());
 
 	def run(self, builder=None, data=None):
-		self.Tree    = defaultdict(list);
 		self.Product = [];
 
 		if builder:
 			sources = builder.Sources[:];
 			for source in sources:
 				source = DependencyNode(source, 'Link', { 'href': source, 'rel': ['import'] });
-				self.processTree(source, root=Path(builder.DocumentRoot).resolve(), cwd=source.Source.parent.resolve());
+				source.Children = self.processTree(source, root=Path(builder.DocumentRoot).resolve(), cwd=source.Source.parent.resolve());
+				self._cache[str(source.Source)] = source;
 
-		return reversed(self.Product);
+			ss = sorted(self._cache.items(), key=lambda x: x[1].References, reverse=True);
+
+			for x in ss:
+				# print(x[1].References, x[0]);
+				self.Product.append(x[1]);
+
+			return self.Product;
