@@ -89,7 +89,6 @@ class Dependencies(BuildStep):
 		else:
 			node.Children[str(el.Source)] = el;
 			el.References = ref + node.References;
-			# print(node);
 			self._cache[str(el.Source)] = el;
 
 	def processTree(self, node, **kargs):
@@ -127,8 +126,8 @@ class Dependencies(BuildStep):
 			sources = builder.Sources[:];
 			for source in sources:
 				source = DependencyNode(source, 'Link', { 'href': source, 'rel': ['import'] });
-				source.Children = self.processTree(source, root=Path(builder.DocumentRoot).resolve(), cwd=source.Source.parent.resolve());
 				self._cache[str(source.Source)] = source;
+				source.Children = self.processTree(source, root=Path(builder.DocumentRoot).resolve(), cwd=source.Source.parent.resolve());
 
 			ss = sorted(self._cache.items(), key=lambda x: x[1].References, reverse=True);
 
