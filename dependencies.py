@@ -82,14 +82,39 @@ class Dependencies(BuildStep):
 				self._resolve(child);
 
 	def addNode(self, node, el):
-		ref = 1;
-		if str(el.Source) in self._cache:
-			node.Children[str(el.Source)] = self._cache[str(el.Source)];
-			self._cache[str(el.Source)].References += ref;
-		else:
-			node.Children[str(el.Source)] = el;
-			el.References = ref + node.References;
-			self._cache[str(el.Source)] = el;
+		nSrc  = str(node.Source);
+		elSrc = str(el.Source);
+
+		# Make sure we have a node reference to pull from the cache!
+		if nSrc not in self._cache:
+			self._cache[nSrc] = node;
+
+		# Make sure we store child in cache!
+		if elSrc not in self._cache:
+			self._cache[elSrc] = el;
+
+		# Make sure to use the references from the cache before we do
+		#   anything with them!
+		node = self._cache[nSrc];
+		el   = self._cache[elSrc];
+
+		# Make sure we add the child from the cache to the parent node!
+		if elSrc not in node.Children:
+			node.Children[elSrc] = self._cache[elSrc];
+
+		# Make sure to increment all available children!
+		self.incrementChildrenReferences(node);
+
+	def incrementChildrenReferences(self, node):
+		if hasattr(node, 'Children'):
+			for ch in node.Children:
+				ch = node.Children[ch];
+				# Increment references if possible!
+				if hasattr(ch, 'References'):
+					ch.References += 1;
+				# Increment children if any!
+				if hasattr(ch, 'Children'):
+					self.incrementChildrenReferences(ch);
 
 	def processTree(self, node, **kargs):
 		root = kargs['root'] if 'root' in kargs else None;
@@ -127,12 +152,11 @@ class Dependencies(BuildStep):
 			for source in sources:
 				source = DependencyNode(source, 'Link', { 'href': source, 'rel': ['import'] });
 				self._cache[str(source.Source)] = source;
-				source.Children = self.processTree(source, root=Path(builder.DocumentRoot).resolve(), cwd=source.Source.parent.resolve());
+				self.processTree(source, root=Path(builder.DocumentRoot).resolve(), cwd=source.Source.parent.resolve());
 
 			ss = sorted(self._cache.items(), key=lambda x: x[1].References, reverse=True);
 
 			for x in ss:
-				# print(x[1].References, x[0]);
 				self.Product.append(x[1]);
 
 			return self.Product;
