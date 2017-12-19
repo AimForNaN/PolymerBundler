@@ -2,19 +2,15 @@
 # -*- coding: utf-8 -*-
 
 class Build(object):
-	Directory = None;
-	DocumentRoot = None;
-	Sources = [];
-	Steps = [];
-
 	"""Build"""
 	def __init__(self):
 		super(Build, self).__init__();
+		self.Steps = [];
 
-	def addStep(self, step):
+	def add(self, step):
 		self.Steps.append(step);
 
 	def run(self):
 		data = None;
 		for step in self.Steps:
-			data = step.run(self, data);
+			data = step.run(data);

@@ -7,5 +7,5 @@ from abc import *
 
 class BuildStep(object, metaclass=ABCMeta):
 	@abstractmethod
-	def run(self, builder=None, data=None):
+	def run(self, data=None):
 		raise NotImplementedError;

@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse, sys;
-
 from build import *;
-from dependencies import *;
-from sandbox import *;
+from buildstep import *;
+from debug import *;
+from pathsresolver import *;
+from welder import *;
+
+import argparse, sys;
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(usage='main.py [--build-dir] [--doc-root] [--source-file] [--html] [--js]');
@@ -16,21 +18,13 @@ if __name__ == '__main__':
 	parser.add_argument('--js', dest='JsFile', type=str, default=None);
 	args = parser.parse_args();
 
-	# Overwrite some defaults!
-	if args.HtmlFile is not None:
-		Sandbox.HtmlDump = args.HtmlFile;
-	if args.JsFile is not None:
-		Sandbox.JsDump = args.JsFile;
+	PathsResolver.DocRoot     = args.DocRoot;
+	PathsResolver.SourceFiles = args.SourceFiles;
 
-	# Some preparation!
-	builder = Build();
-	builder.DocumentRoot = args.DocRoot;
-	builder.Directory    = args.BuildDir;
-	builder.Sources      = args.SourceFiles;
+	Welder.BuildDirectory = args.BuildDir;
 
-	# Add some steps!
-	builder.addStep(Dependencies());
-	builder.addStep(Sandbox());
+	build = Build();
+	build.add(PathsResolver());
+	build.add(Welder());
 
-	# Start the engines!
-	builder.run();
+	build.run();
