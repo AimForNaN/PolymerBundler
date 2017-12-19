@@ -1,6 +1,6 @@
 # PolymerBundler
 
-This tries to mimic what [polymer-bundler](https://github.com/Polymer/polymer-bundler) and [crisper](https://github.com/PolymerLabs/crisper) would do (though not entirely). Because the other tools are not yet ready for production environments (as of this writing, Feb 2017) and I have ran into issues using them, I have built this. This tool compiles to `build.html` and `build.js` respectively. It tries to resolve all dependencies in the order in which they are found in each source file, working its way down the dependency tree from the input source files. In other words, for example, if the source file depends on `polymer.html`, `polymer.html` should never be included at the end of the build.html file.
+This tries to mimic what [polymer-bundler](https://github.com/Polymer/polymer-bundler) and [crisper](https://github.com/PolymerLabs/crisper) would do (though not entirely). Because I have ran into issues with the other tools, I have built this. This tool compiles to `build.html` and `build.js` respectively. It tries to resolve all dependencies in the order in which they are found in each source file, working its way down the dependency tree from the input source files. In other words, for example, if the source file depends on `polymer.html`, `polymer.html` should never be included at the end of the build.html file.
 
 ## Command-line Options
 
